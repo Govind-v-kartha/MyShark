@@ -189,8 +189,19 @@ def extract_http_info(tcp_layer: TCP, info: Dict[str, Any]) -> None:
         # Try to use Scapy's HTTPRequest if available
         http_layer = tcp_layer.getlayer(HTTPRequest)
         if http_layer:
-            info['http_host'] = getattr(http_layer, 'Host', None)
-            info['http_path'] = getattr(http_layer, 'Path', None)
+            host = getattr(http_layer, 'Host', None)
+            path = getattr(http_layer, 'Path', None)
+            
+            # Decode bytes to string if necessary
+            if isinstance(host, bytes):
+                info['http_host'] = host.decode('utf-8', errors='replace')
+            else:
+                info['http_host'] = host
+                
+            if isinstance(path, bytes):
+                info['http_path'] = path.decode('utf-8', errors='replace')
+            else:
+                info['http_path'] = path
             return
     except Exception:
         pass

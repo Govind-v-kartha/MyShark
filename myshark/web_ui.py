@@ -5,6 +5,7 @@ Provides:
 - GET / : Recent packets table with JSON endpoint
 - GET /api/recent : JSON endpoint for recent packets
 - GET /packet/<id> : Detailed packet view
+- GET /log : Request logging dashboard
 """
 
 import os
@@ -14,6 +15,7 @@ import argparse
 import logging
 from datetime import datetime
 from pathlib import Path
+from collections import deque
 
 try:
     from flask import Flask, render_template, jsonify, request, abort
@@ -22,7 +24,21 @@ except ImportError:
     sys.exit(1)
 
 from pcap_store import PcapStore
-from parser import format_packet_display
+from parser import format_packet_display, extract_packet_info
+
+try:
+    from scapy.all import rdpcap
+except ImportError:
+    rdpcap = None
+
+
+# Request logger - stores last 100 requests
+request_log = deque(maxlen=100)
+request_stats = {
+    'total_requests': 0,
+    'by_endpoint': {},
+    'by_status': {},
+}
 
 
 # Configure logging
@@ -106,6 +122,11 @@ def create_app(store: PcapStore) -> Flask:
             abort(404)
         
         # Return packet data as JSON (serializable types only)
+        tcp_flags = pkt.get('tcp_flags')
+        if tcp_flags:
+            # Convert bool dict to JSON-serializable format
+            tcp_flags = {k: bool(v) for k, v in tcp_flags.items()}
+        
         data = {
             'id': packet_id,
             'timestamp': pkt.get('timestamp_iso', ''),
@@ -116,7 +137,7 @@ def create_app(store: PcapStore) -> Flask:
             'sport': pkt.get('sport'),
             'dport': pkt.get('dport'),
             'l4_proto': pkt.get('l4_proto'),
-            'tcp_flags': pkt.get('tcp_flags'),
+            'tcp_flags': tcp_flags,
             'dns_queries': pkt.get('dns_queries', []),
             'http_host': pkt.get('http_host'),
             'http_path': pkt.get('http_path'),
@@ -157,6 +178,58 @@ def create_app(store: PcapStore) -> Flask:
             'by_protocol': proto_count,
         })
     
+    @app.route('/log')
+    def log_dashboard():
+        """Request logging dashboard."""
+        return render_template('log.html', 
+                             logs=list(request_log),
+                             stats=request_stats)
+    
+    @app.route('/api/log')
+    def api_log():
+        """JSON API for request logs."""
+        return jsonify({
+            'total_requests': request_stats['total_requests'],
+            'by_endpoint': request_stats['by_endpoint'],
+            'by_status': request_stats['by_status'],
+            'recent_requests': list(request_log)[-50:],  # Last 50 requests
+        })
+    
+    # Request logging middleware
+    @app.before_request
+    def log_request():
+        """Log incoming requests."""
+        global request_stats
+        
+        endpoint = request.path
+        method = request.method
+        
+        # Store in logs
+        request_log.append({
+            'timestamp': datetime.now().isoformat(),
+            'method': method,
+            'endpoint': endpoint,
+            'remote_addr': request.remote_addr,
+        })
+        
+        # Update stats
+        request_stats['total_requests'] += 1
+        request_stats['by_endpoint'][endpoint] = request_stats['by_endpoint'].get(endpoint, 0) + 1
+    
+    @app.after_request
+    def log_response(response):
+        """Log response status codes."""
+        global request_stats
+        
+        endpoint = request.path
+        status = response.status_code
+        
+        # Update status code stats
+        status_key = f"{status}"
+        request_stats['by_status'][status_key] = request_stats['by_status'].get(status_key, 0) + 1
+        
+        return response
+    
     @app.errorhandler(404)
     def not_found(error):
         """Handle 404 errors."""
@@ -191,6 +264,19 @@ Examples:
     
     # Create shared store
     store = PcapStore(maxlen=500)
+    
+    # Auto-load demo data if available
+    demo_pcap = 'samples/demo.pcap'
+    if os.path.exists(demo_pcap) and rdpcap:
+        try:
+            logger.info(f"Loading demo packets from {demo_pcap}")
+            packets = rdpcap(demo_pcap)
+            for pkt in packets:
+                info = extract_packet_info(pkt)
+                store.append(info, raw_packet=pkt)
+            logger.info(f"Loaded {store.length()} demo packets")
+        except Exception as e:
+            logger.warning(f"Could not load demo data: {e}")
     
     # Create Flask app
     app = create_app(store)
