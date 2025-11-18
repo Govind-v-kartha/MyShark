@@ -1,0 +1,304 @@
+/* MyShark Web UI Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+}
+
+header nav {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+header nav a {
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.2);
+    transition: background-color 0.3s;
+}
+
+header nav a:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+main {
+    min-height: calc(100vh - 200px);
+}
+
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+/* Packets Section */
+.packets-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.packets-section h2 {
+    color: #667eea;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 0.5rem;
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.controls label {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.controls select,
+.controls input {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    background-color: #667eea;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.3s;
+}
+
+.btn:hover {
+    background-color: #764ba2;
+}
+
+.stats {
+    background-color: #f9f9f9;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.stats p {
+    margin: 0.5rem 0;
+}
+
+/* Table Styles */
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.packets-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.packets-table thead {
+    background-color: #f0f0f0;
+    border-bottom: 2px solid #ddd;
+}
+
+.packets-table th {
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+}
+
+.packets-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #eee;
+}
+
+.packets-table tbody tr {
+    transition: background-color 0.2s;
+}
+
+.packets-table tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+.packets-table a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.packets-table a:hover {
+    text-decoration: underline;
+}
+
+/* Packet Detail Section */
+.packet-detail-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.packet-detail-section h2 {
+    color: #667eea;
+    margin-bottom: 1.5rem;
+}
+
+.packet-detail-section h3 {
+    color: #764ba2;
+    margin: 2rem 0 1rem 0;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.5rem;
+}
+
+.navigation {
+    margin-bottom: 1.5rem;
+}
+
+/* Info Table */
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.info-table tr {
+    border-bottom: 1px solid #eee;
+}
+
+.info-table td {
+    padding: 0.75rem;
+}
+
+.info-table td:first-child {
+    width: 200px;
+    font-weight: 600;
+    color: #667eea;
+}
+
+.info-table code {
+    background-color: #f5f5f5;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.flag {
+    display: inline-block;
+    background-color: #667eea;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    margin-right: 0.5rem;
+    font-weight: 600;
+}
+
+/* Hexdump Section */
+.hexdump-section {
+    margin-top: 2rem;
+}
+
+.hexdump {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #333;
+}
+
+.hexdump code {
+    color: inherit;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    header {
+        padding: 1.5rem 0;
+    }
+
+    header h1 {
+        font-size: 1.3rem;
+    }
+
+    header nav {
+        flex-wrap: wrap;
+    }
+
+    .container {
+        padding: 1rem;
+    }
+
+    .packets-section,
+    .packet-detail-section {
+        padding: 1rem;
+    }
+
+    .controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .info-table td:first-child {
+        width: auto;
+    }
+
+    .packets-table {
+        font-size: 0.8rem;
+    }
+
+    .packets-table th,
+    .packets-table td {
+        padding: 0.5rem;
+    }
+}

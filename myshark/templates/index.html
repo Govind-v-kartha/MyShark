@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyShark - Recent Packets</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>🦈 MyShark Packet Capture</h1>
+        <nav>
+            <a href="/">Recent Packets</a>
+            <a href="/api/stats">Statistics</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+            <section class="packets-section">
+                <h2>Recent Packets</h2>
+                
+                <div class="controls">
+                    <label>
+                        Refresh every: 
+                        <select id="refresh-interval">
+                            <option value="0">Manual</option>
+                            <option value="1000">1s</option>
+                            <option value="2000" selected>2s</option>
+                            <option value="5000">5s</option>
+                        </select>
+                    </label>
+                    <button id="btn-refresh">Refresh Now</button>
+                </div>
+
+                <div class="stats">
+                    <p>Total packets: <strong id="total-packets">{{ total }}</strong></p>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="packets-table" id="packets-table">
+                        <thead>
+                            <tr>
+                                <th>Index</th>
+                                <th>Timestamp</th>
+                                <th>Src IP:Port</th>
+                                <th>Dst IP:Port</th>
+                                <th>Protocol</th>
+                                <th>Summary</th>
+                            </tr>
+                        </thead>
+                        <tbody id="packets-tbody">
+                            {% for pkt in packets %}
+                            <tr class="packet-row" data-packet-id="{{ loop.index0 }}">
+                                <td><a href="/packet/{{ loop.index0 }}">{{ loop.index0 }}</a></td>
+                                <td>{{ pkt.timestamp_iso[:19] }}</td>
+                                <td>{{ pkt.ip_src or '?' }}{{ ':' + pkt.sport|string if pkt.sport else '' }}</td>
+                                <td>{{ pkt.ip_dst or '?' }}{{ ':' + pkt.dport|string if pkt.dport else '' }}</td>
+                                <td>{{ pkt.l4_proto or '?' }}</td>
+                                <td>{{ pkt.summary[:60] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <p>MyShark - Lightweight Packet Capture Tool</p>
+    </footer>
+
+    <script>
+        let refreshInterval = null;
+
+        function updatePacketTable() {
+            fetch('/api/recent?count=100')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('packets-tbody');
+                    const totalDisplay = document.getElementById('total-packets');
+                    
+                    tbody.innerHTML = '';
+                    totalDisplay.textContent = data.total;
+                    
+                    data.recent.forEach(pkt => {
+                        const row = document.createElement('tr');
+                        row.className = 'packet-row';
+                        row.dataset.packetId = pkt.id;
+                        
+                        const srcPort = pkt.sport ? `:${pkt.sport}` : '';
+                        const dstPort = pkt.dport ? `:${pkt.dport}` : '';
+                        
+                        row.innerHTML = `
+                            <td><a href="/packet/${pkt.id}">${pkt.id}</a></td>
+                            <td>${pkt.timestamp.substring(0, 19)}</td>
+                            <td>${pkt.ip_src}${srcPort}</td>
+                            <td>${pkt.ip_dst}${dstPort}</td>
+                            <td>${pkt.proto}</td>
+                            <td>${pkt.summary.substring(0, 60)}</td>
+                        `;
+                        
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error updating table:', error));
+        }
+
+        document.getElementById('btn-refresh').addEventListener('click', updatePacketTable);
+
+        document.getElementById('refresh-interval').addEventListener('change', function(e) {
+            if (refreshInterval) clearInterval(refreshInterval);
+            
+            const interval = parseInt(e.target.value);
+            if (interval > 0) {
+                refreshInterval = setInterval(updatePacketTable, interval);
+            }
+        });
+
+        // Trigger initial auto-refresh based on selected interval
+        const initialInterval = document.getElementById('refresh-interval').value;
+        if (parseInt(initialInterval) > 0) {
+            refreshInterval = setInterval(updatePacketTable, parseInt(initialInterval));
+        }
+
+        // Add click handlers to packet rows
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a[href^="/packet/"]');
+            if (link) {
+                e.preventDefault();
+                window.location.href = link.href;
+            }
+        });
+    </script>
+</body>
+</html>

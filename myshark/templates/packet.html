@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packet {{ packet_id }} - MyShark</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>🦈 MyShark Packet Capture</h1>
+        <nav>
+            <a href="/">Recent Packets</a>
+            <a href="/api/stats">Statistics</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+            <section class="packet-detail-section">
+                <h2>Packet #{{ packet_id }}</h2>
+                
+                <div class="navigation">
+                    <a href="/" class="btn">← Back to List</a>
+                </div>
+
+                <div class="packet-info">
+                    <h3>Packet Details</h3>
+                    <table class="info-table">
+                        <tr>
+                            <td><strong>Timestamp:</strong></td>
+                            <td>{{ packet.timestamp_iso }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Layer Stack:</strong></td>
+                            <td><code>{{ packet.layer_stack }}</code></td>
+                        </tr>
+                        {% if packet.ip_src %}
+                        <tr>
+                            <td><strong>IP Source:</strong></td>
+                            <td>{{ packet.ip_src }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if packet.ip_dst %}
+                        <tr>
+                            <td><strong>IP Destination:</strong></td>
+                            <td>{{ packet.ip_dst }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if packet.l4_proto %}
+                        <tr>
+                            <td><strong>Protocol:</strong></td>
+                            <td>{{ packet.l4_proto }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if packet.sport is not none %}
+                        <tr>
+                            <td><strong>Source Port:</strong></td>
+                            <td>{{ packet.sport }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if packet.dport is not none %}
+                        <tr>
+                            <td><strong>Destination Port:</strong></td>
+                            <td>{{ packet.dport }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if packet.tcp_flags %}
+                        <tr>
+                            <td><strong>TCP Flags:</strong></td>
+                            <td>
+                                {% for flag, value in packet.tcp_flags.items() %}
+                                    {% if value %}<span class="flag">{{ flag }}</span>{% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% if packet.dns_queries %}
+                        <tr>
+                            <td><strong>DNS Queries:</strong></td>
+                            <td>
+                                {% for query in packet.dns_queries %}
+                                    <div>{{ query }}</div>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% if packet.http_host %}
+                        <tr>
+                            <td><strong>HTTP Host:</strong></td>
+                            <td>{{ packet.http_host }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if packet.http_path %}
+                        <tr>
+                            <td><strong>HTTP Path:</strong></td>
+                            <td>{{ packet.http_path }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+
+                <div class="hexdump-section">
+                    <h3>Packet Hex Dump</h3>
+                    <pre class="hexdump"><code>{{ formatted_display.split('\n')[formatted_display.split('\n')|length - 20:]|join('\n') }}</code></pre>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <p>MyShark - Lightweight Packet Capture Tool</p>
+    </footer>
+</body>
+</html>
