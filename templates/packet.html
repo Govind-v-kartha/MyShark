@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packet #{{ packet.id }} - MyShark</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        header h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        
+        a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .breadcrumb {
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        
+        .breadcrumb a {
+            margin-right: 8px;
+        }
+        
+        .packet-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .packet-card-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 20px;
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        
+        .packet-card-content {
+            padding: 20px;
+        }
+        
+        .field-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .field-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .field-label {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .field-value {
+            color: #495057;
+            font-size: 13px;
+            word-break: break-all;
+        }
+        
+        .hex-dump {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            background: #d4edff;
+            color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🦈 MyShark - Packet Details</h1>
+    </header>
+    
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="/">← Back to List</a>
+        </div>
+        
+        <!-- Header -->
+        <div class="packet-card">
+            <div class="packet-card-header">Packet #{{ packet.id }}</div>
+            <div class="packet-card-content">
+                <div class="field-row">
+                    <div class="field-label">Timestamp</div>
+                    <div class="field-value">{{ packet.timestamp }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Protocol</div>
+                    <div class="field-value"><span class="badge">{{ packet.protocol }}</span></div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Layer Stack</div>
+                    <div class="field-value">{{ packet.layers }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Link Layer -->
+        <div class="packet-card">
+            <div class="packet-card-header">Link Layer (MAC)</div>
+            <div class="packet-card-content">
+                <div class="field-row">
+                    <div class="field-label">Source MAC</div>
+                    <div class="field-value">{{ packet.src_mac }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Destination MAC</div>
+                    <div class="field-value">{{ packet.dst_mac }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Network Layer -->
+        <div class="packet-card">
+            <div class="packet-card-header">Network Layer (IPv4)</div>
+            <div class="packet-card-content">
+                <div class="field-row">
+                    <div class="field-label">Source IP</div>
+                    <div class="field-value">{{ packet.src_ip }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Destination IP</div>
+                    <div class="field-value">{{ packet.dst_ip }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Transport Layer -->
+        <div class="packet-card">
+            <div class="packet-card-header">Transport Layer ({{ packet.protocol }})</div>
+            <div class="packet-card-content">
+                <div class="field-row">
+                    <div class="field-label">Source Port</div>
+                    <div class="field-value">{{ packet.src_port }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Destination Port</div>
+                    <div class="field-value">{{ packet.dst_port }}</div>
+                </div>
+                {% if packet.tcp_flags != 'N/A' %}
+                <div class="field-row">
+                    <div class="field-label">TCP Flags</div>
+                    <div class="field-value">{{ packet.tcp_flags }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- DNS Info -->
+        {% if packet.dns_queries != 'None' %}
+        <div class="packet-card">
+            <div class="packet-card-header">DNS</div>
+            <div class="packet-card-content">
+                <div class="field-row">
+                    <div class="field-label">Queries</div>
+                    <div class="field-value">{{ packet.dns_queries }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- HTTP Info -->
+        {% if packet.http_host != 'N/A' %}
+        <div class="packet-card">
+            <div class="packet-card-header">HTTP</div>
+            <div class="packet-card-content">
+                <div class="field-row">
+                    <div class="field-label">Host</div>
+                    <div class="field-value">{{ packet.http_host }}</div>
+                </div>
+                {% if packet.http_path != 'N/A' %}
+                <div class="field-row">
+                    <div class="field-label">Path</div>
+                    <div class="field-value">{{ packet.http_path }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Full Packet Hex -->
+        <div class="packet-card">
+            <div class="packet-card-header">Full Packet Hex Dump ({{ packet.raw_bytes_len }} bytes)</div>
+            <div class="packet-card-content">
+                <div class="hex-dump">{{ packet.hex_dump_full }}</div>
+            </div>
+        </div>
+        
+        <!-- Payload Hex -->
+        {% if packet.payload_bytes_len > 0 %}
+        <div class="packet-card">
+            <div class="packet-card-header">Payload Hex Dump ({{ packet.payload_bytes_len }} bytes)</div>
+            <div class="packet-card-content">
+                <div class="hex-dump">{{ packet.hex_dump_payload }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
