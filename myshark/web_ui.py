@@ -18,10 +18,17 @@ if __name__ == "__main__" or __package__ is None:
 import json
 import logging
 from typing import Optional
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
+import tempfile
 
 from myshark.pcap_store import PacketBuffer
 from myshark.parser import hexdump
+
+try:
+    from scapy.all import rdpcap
+    HAS_SCAPY = True
+except ImportError:
+    HAS_SCAPY = False
 
 
 logger = logging.getLogger(__name__)
@@ -130,6 +137,51 @@ def create_app(buffer: Optional[PacketBuffer] = None) -> Flask:
             "total_packets": packet_buffer.count(),
             "buffer_size": packet_buffer.maxlen
         })
+    
+    @app.route("/upload", methods=["POST"])
+    def upload_pcap():
+        """Upload and parse a PCAP file."""
+        if not HAS_SCAPY:
+            return jsonify({"error": "Scapy not available"}), 500
+        
+        if "pcapfile" not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+        
+        file = request.files["pcapfile"]
+        if file.filename == "":
+            return jsonify({"error": "Empty filename"}), 400
+        
+        try:
+            from werkzeug.utils import secure_filename
+            from myshark.parser import parse_packet
+            
+            # Save to temporary file
+            filename = secure_filename(file.filename)
+            tmpdir = tempfile.gettempdir()
+            tmp_path = os.path.join(tmpdir, filename)
+            file.save(tmp_path)
+            
+            # Read and parse packets
+            packets = rdpcap(tmp_path)
+            
+            # Clear existing buffer and load new packets
+            packet_buffer.clear()
+            count = 0
+            for pkt in packets:
+                parsed = parse_packet(pkt)
+                packet_buffer.append(parsed, pkt)
+                count += 1
+            
+            # Clean up temp file
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
+            
+            return jsonify({"status": "ok", "loaded": count})
+        except Exception as e:
+            logger.error(f"Upload error: {e}")
+            return jsonify({"error": str(e)}), 500
     
     @app.errorhandler(404)
     def not_found(error):
