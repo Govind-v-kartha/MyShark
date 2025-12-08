@@ -1,6 +1,6 @@
 """
 Packet parsing and field extraction utilities for network traffic analysis.
-Supports multiple protocol layers including Ethernet, IP, TCP, UDP, ICMP, ARP, DNS, and HTTP.
+Supports multiple protocol layers including Ethernet, IP, TCP, UDP, ICMP, ARP, DNS, HTTP, and 802.11 (WiFi).
 """
 
 from scapy.all import Packet
@@ -9,6 +9,7 @@ from scapy.layers.inet6 import IPv6, ICMPv6EchoRequest, ICMPv6EchoReply
 from scapy.layers.l2 import Ether, ARP
 from scapy.layers.dns import DNS, DNSQR, DNSRR
 from scapy.layers.http import HTTPRequest, HTTPResponse
+from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11ProbeReq, Dot11ProbeResp, Dot11AssoReq, Dot11AssoResp, Dot11Auth, Dot11Deauth, Dot11Disas, Dot11Elt
 from typing import Dict, Optional, List, Any
 import logging
 
@@ -39,6 +40,7 @@ class PacketParser:
             'timestamp': self._extract_timestamp(),
             'packet_length': len(self.packet),
             'protocol_stack': self._extract_protocol_stack(),
+            'dot11': self._parse_dot11(),
             'ethernet': self._parse_ethernet(),
             'arp': self._parse_arp(),
             'ip': self._parse_ip(),
@@ -62,6 +64,166 @@ class PacketParser:
     
     def _extract_protocol_stack(self) -> List[str]:
         return [layer.__name__ if hasattr(layer, '__name__') else str(layer) for layer in self.packet.layers()]
+    
+    def _parse_dot11(self) -> Optional[Dict[str, Any]]:
+        """Parse 802.11 (WiFi) layer fields."""
+        if not self.packet.haslayer(Dot11):
+            return None
+        
+        dot11 = self.packet[Dot11]
+        parsed_dot11 = {
+            'type': dot11.type,
+            'subtype': dot11.subtype,
+            'type_name': self._get_dot11_type_name(dot11.type, dot11.subtype),
+            'addr1': dot11.addr1,  # Destination/Receiver
+            'addr2': dot11.addr2,  # Source/Transmitter
+            'addr3': dot11.addr3 if hasattr(dot11, 'addr3') else None,  # BSSID or filtering
+            'addr4': dot11.addr4 if hasattr(dot11, 'addr4') else None,  # Only in WDS
+            'SC': dot11.SC,  # Sequence Control
+        }
+        
+        # Parse specific 802.11 frame types
+        if self.packet.haslayer(Dot11Beacon):
+            beacon = self.packet[Dot11Beacon]
+            parsed_dot11['beacon'] = {
+                'timestamp': beacon.timestamp,
+                'beacon_interval': beacon.beacon_interval,
+                'cap': beacon.cap
+            }
+            # Extract SSID and other information elements
+            parsed_dot11['info_elements'] = self._parse_dot11_info_elements()
+        
+        elif self.packet.haslayer(Dot11ProbeReq):
+            parsed_dot11['probe_request'] = True
+            parsed_dot11['info_elements'] = self._parse_dot11_info_elements()
+        
+        elif self.packet.haslayer(Dot11ProbeResp):
+            probe_resp = self.packet[Dot11ProbeResp]
+            parsed_dot11['probe_response'] = {
+                'timestamp': probe_resp.timestamp,
+                'beacon_interval': probe_resp.beacon_interval,
+                'cap': probe_resp.cap
+            }
+            parsed_dot11['info_elements'] = self._parse_dot11_info_elements()
+        
+        elif self.packet.haslayer(Dot11AssoReq):
+            asso_req = self.packet[Dot11AssoReq]
+            parsed_dot11['association_request'] = {
+                'cap': asso_req.cap,
+                'listen_interval': asso_req.listen_interval
+            }
+            parsed_dot11['info_elements'] = self._parse_dot11_info_elements()
+        
+        elif self.packet.haslayer(Dot11AssoResp):
+            asso_resp = self.packet[Dot11AssoResp]
+            parsed_dot11['association_response'] = {
+                'cap': asso_resp.cap,
+                'status': asso_resp.status,
+                'AID': asso_resp.AID
+            }
+        
+        elif self.packet.haslayer(Dot11Auth):
+            auth = self.packet[Dot11Auth]
+            parsed_dot11['authentication'] = {
+                'algo': auth.algo,
+                'seqnum': auth.seqnum,
+                'status': auth.status
+            }
+        
+        elif self.packet.haslayer(Dot11Deauth):
+            deauth = self.packet[Dot11Deauth]
+            parsed_dot11['deauthentication'] = {
+                'reason': deauth.reason
+            }
+        
+        elif self.packet.haslayer(Dot11Disas):
+            disas = self.packet[Dot11Disas]
+            parsed_dot11['disassociation'] = {
+                'reason': disas.reason
+            }
+        
+        return parsed_dot11
+    
+    def _parse_dot11_info_elements(self) -> Dict[str, Any]:
+        """Parse 802.11 information elements (IEs)."""
+        info_elements = {}
+        
+        if self.packet.haslayer(Dot11Elt):
+            elt = self.packet[Dot11Elt]
+            while elt:
+                try:
+                    # ID 0 = SSID
+                    if elt.ID == 0:
+                        info_elements['ssid'] = elt.info.decode('utf-8', errors='ignore')
+                    # ID 1 = Supported Rates
+                    elif elt.ID == 1:
+                        info_elements['supported_rates'] = list(elt.info)
+                    # ID 3 = DS Parameter Set (Channel)
+                    elif elt.ID == 3:
+                        info_elements['channel'] = int(elt.info[0]) if elt.info else None
+                    # ID 48 = RSN Information (WPA2)
+                    elif elt.ID == 48:
+                        info_elements['rsn'] = True
+                    # ID 221 = Vendor Specific (often WPA)
+                    elif elt.ID == 221:
+                        if b'\x00\x50\xf2\x01\x01\x00' in elt.info:
+                            info_elements['wpa'] = True
+                    
+                    elt = elt.payload.getlayer(Dot11Elt)
+                except Exception:
+                    break
+        
+        return info_elements
+    
+    def _get_dot11_type_name(self, frame_type: int, subtype: int) -> str:
+        """Get human-readable 802.11 frame type name."""
+        # Management frames (type 0)
+        if frame_type == 0:
+            management_subtypes = {
+                0: 'Association Request',
+                1: 'Association Response',
+                2: 'Reassociation Request',
+                3: 'Reassociation Response',
+                4: 'Probe Request',
+                5: 'Probe Response',
+                8: 'Beacon',
+                9: 'ATIM',
+                10: 'Disassociation',
+                11: 'Authentication',
+                12: 'Deauthentication',
+                13: 'Action'
+            }
+            return management_subtypes.get(subtype, f'Management (Unknown subtype {subtype})')
+        
+        # Control frames (type 1)
+        elif frame_type == 1:
+            control_subtypes = {
+                10: 'PS-Poll',
+                11: 'RTS',
+                12: 'CTS',
+                13: 'ACK',
+                14: 'CF-End',
+                15: 'CF-End+CF-Ack'
+            }
+            return control_subtypes.get(subtype, f'Control (Unknown subtype {subtype})')
+        
+        # Data frames (type 2)
+        elif frame_type == 2:
+            data_subtypes = {
+                0: 'Data',
+                1: 'Data+CF-Ack',
+                2: 'Data+CF-Poll',
+                3: 'Data+CF-Ack+CF-Poll',
+                4: 'Null',
+                5: 'CF-Ack',
+                6: 'CF-Poll',
+                7: 'CF-Ack+CF-Poll',
+                8: 'QoS Data',
+                12: 'QoS Null'
+            }
+            return data_subtypes.get(subtype, f'Data (Unknown subtype {subtype})')
+        
+        return f'Unknown type {frame_type} subtype {subtype}'
     
     def _parse_ethernet(self) -> Optional[Dict[str, str]]:
         """Parse Ethernet layer fields."""
