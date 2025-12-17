@@ -17,7 +17,7 @@ import logging
 import json
 
 from scapy.all import rdpcap
-from src.parser import PacketParser, PacketAnalyzer
+from myshark.packet_parser import PacketParser, PacketAnalyzer
 
 
 def convert_to_serializable(obj):
