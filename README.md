@@ -1,5 +1,7 @@
 # MyShark - Network Packet Analyzer
 
+[![CI](https://github.com/Govind-v-kartha/MyShark/actions/workflows/ci.yml/badge.svg)](https://github.com/Govind-v-kartha/MyShark/actions/workflows/ci.yml)
+
 A lightweight Python-based packet analyzer for PCAP files. Load, filter, and analyze network packets with ease.
 
 ## Features
@@ -14,7 +16,7 @@ A lightweight Python-based packet analyzer for PCAP files. Load, filter, and ana
 ## Installation
 
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ## Quick Start
@@ -37,13 +39,13 @@ python -m myshark.cli read "filename.pcapng" --custom "proto:udp"
 python -m myshark.cli read "filename.pcapng" --custom "port:80"
 ```
 
-### Start web dashboard
+### Start web dashboard (FastAPI)
 
 ```bash
-python myshark/web_ui.py --host 127.0.0.1 --port 5000
+python -m uvicorn web_app:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Then open: **http://127.0.0.1:5000**
+Then open: **http://127.0.0.1:8000**
 
 ## Python API
 
@@ -143,10 +145,10 @@ python -m myshark.cli read capture.pcap --custom "port:22 or port:23 or port:338
 
 ## Requirements
 
-- Python 3.7+
+- Python 3.10+
 - scapy - Packet manipulation library
-- flask - Web framework
-- click - CLI framework
+- fastapi - Web framework
+- uvicorn - ASGI server
 - pytest - Testing framework
 
 ## License
