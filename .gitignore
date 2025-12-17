@@ -42,3 +42,9 @@ htmlcov/
 # Project specific
 *.pcapng
 *.pcap
+uploads/
+data/
+dump/
+logs/
+*.log
+.env
