@@ -63,7 +63,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="OurShark - Packet Analysis Tool",
+    title="MyShark - Packet Analysis Tool",
     description="Upload and analyze network packet capture files",
     version="1.0.0"
 )
@@ -178,13 +178,13 @@ async def analyze_packet_capture(file: UploadFile = File(...)):
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "service": "OurShark Packet Analyzer"}
+    return {"status": "healthy", "service": "MyShark Packet Analyzer"}
 
 
 if __name__ == "__main__":
     import uvicorn
     
-    logger.info("Starting OurShark Web Application...")
+    logger.info("Starting MyShark Web Application...")
     logger.info("Access the application at: http://localhost:8000")
     
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

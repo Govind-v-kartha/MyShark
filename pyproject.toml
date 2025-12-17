@@ -1,5 +1,5 @@
 [project]
-name = "ourshark"
+name = "myshark"
 version = "0.1.0"
 description = "Comprehensive network packet analysis tool with web UI"
 readme = "README.md"
