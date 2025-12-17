@@ -48,3 +48,4 @@ dump/
 logs/
 *.log
 .env
+uv.lock
