@@ -1,0 +1,14 @@
+[project]
+name = "myshark"
+version = "0.1.0"
+description = "Lightweight Python packet analyzer for PCAP files with CLI and web UI"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "Govind v Kartha", email = "knvgovind@gmail.com"}]
+dependencies = [
+    "scapy>=2.6.1",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "python-multipart>=0.0.12",
+    "jinja2>=3.1.4",
+]
